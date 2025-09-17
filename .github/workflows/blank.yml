@@ -14,22 +14,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '24.4'   
-
       - name: Validate environment
-        run: make validate-env
+        run: make validate-env   # validates Go, Docker, kubectl, migrate
+
+      - name: Install Go dependencies
+        run: make deps          # ensure your Makefile has:
+                                # deps:
+                                #     cd msgms && go mod tidy
 
       - name: Build Go binary
-        run: make build
+        run: make build          # builds Go binary to bin/$(BINARY_NAME)
 
       - name: Run unit tests
-        run: make test
+        run: make test           # runs tests under ./tests
 
-      - name: Build Docker image (dev)
-        run: make docker-build OVERLAY=dev
+      - name: Build Docker image
+        run: make docker-build OVERLAY=dev  # dev overlay uses local Docker build
 
       - name: Log in to Docker Hub (stg/prd only)
         if: ${{ github.ref == 'refs/heads/main' }}
@@ -37,5 +37,4 @@ jobs:
 
       - name: Push Docker image (stg/prd only)
         if: ${{ github.ref == 'refs/heads/main' }}
-        run: make docker-push OVERLAY=stg
-
+        run: make docker-push OVERLAY=stg   # pushes to registry
