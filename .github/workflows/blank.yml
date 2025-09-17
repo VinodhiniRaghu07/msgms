@@ -1,7 +1,7 @@
 name: Msgms CI/CD
 
 on:
-  workflow_dispatch:  # manual trigger
+  workflow_dispatch:  # Manual trigger
   push:
     branches:
       - main
@@ -14,27 +14,47 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # --------------------------
+      # Environment Validation
+      # --------------------------
       - name: Validate environment
-        run: make validate-env   # validates Go, Docker, kubectl, migrate
+        run: make -C msgms validate-env
 
+      # --------------------------
+      # Go Dependencies
+      # --------------------------
       - name: Install Go dependencies
-        run: make deps          # ensure your Makefile has:
-                                # deps:
-                                #     cd msgms && go mod tidy
+        run: make -C msgms deps
 
+      # --------------------------
+      # Build Go Binary
+      # --------------------------
       - name: Build Go binary
-        run: make build          # builds Go binary to bin/$(BINARY_NAME)
+        run: make -C msgms build
 
+      # --------------------------
+      # Run Unit Tests
+      # --------------------------
       - name: Run unit tests
-        run: make test           # runs tests under ./tests
+        run: make -C msgms test
 
-      - name: Build Docker image
-        run: make docker-build OVERLAY=dev  # dev overlay uses local Docker build
+      # --------------------------
+      # Build Docker Image
+      # --------------------------
+      - name: Build Docker image (dev overlay)
+        run: make -C msgms docker-build OVERLAY=dev
 
-      - name: Log in to Docker Hub (stg/prd only)
+      # --------------------------
+      # Docker Hub Login (main branch only)
+      # --------------------------
+      - name: Log in to Docker Hub
         if: ${{ github.ref == 'refs/heads/main' }}
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u your-dockerhub-username --password-stdin
 
-      - name: Push Docker image (stg/prd only)
+      # --------------------------
+      # Push Docker Image (stg overlay)
+      # --------------------------
+      - name: Push Docker image
         if: ${{ github.ref == 'refs/heads/main' }}
-        run: make docker-push OVERLAY=stg   # pushes to registry
+        run: make -C msgms docker-push OVERLAY=stg
+
