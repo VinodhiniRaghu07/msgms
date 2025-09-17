@@ -30,7 +30,9 @@ jobs:
           go-version: 1.24
 
       - name: Validate Environment
-        run: make validate-env
+         working-directory: msgms
+         run: make validate-env
+
 
       - name: Show Config
         run: make show-config
