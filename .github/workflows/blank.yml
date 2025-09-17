@@ -14,7 +14,7 @@ jobs:
       OVERLAY: dev        # Change to stg/prd as needed
       DOCKER_TAG: latest
       MS_NAME: msgms
-      GCR_PFX: gcr.io/your-project-id
+      GCR_PFX: gcr.io/keystone-466112
       DB_HOST: 127.0.0.1
       DB_PORT: 5432
       DB_USER: postgres
