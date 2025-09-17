@@ -1,64 +1,61 @@
-name: Msgms CI/CD
+name: MSGMS CI/CD
 
+# Trigger on push to main or on manual dispatch
 on:
-  workflow_dispatch:  # Manual trigger
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: self-hosted
+  build-and-deploy:
+    runs-on: self-hosted  # Use your self-hosted runner
+    env:
+      OVERLAY: dev        # Change to stg/prd as needed
+      DOCKER_TAG: latest
+      MS_NAME: msgms
+      GCR_PFX: gcr.io/your-project-id
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
 
     steps:
-      # --------------------------
-      # Checkout repository
-      # --------------------------
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-      # --------------------------
-      # Validate environment
-      # --------------------------
-      - name: Validate environment
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.24
+
+      - name: Validate Environment
         run: make validate-env
 
-      # --------------------------
-      # Install Go dependencies
-      # --------------------------
-      - name: Install Go dependencies
-        run: make deps
+      - name: Show Config
+        run: make show-config
 
-      # --------------------------
-      # Build Go binary
-      # --------------------------
-      - name: Build Go binary
+      - name: Build Go Binary
         run: make build
 
-      # --------------------------
-      # Run unit tests
-      # --------------------------
-      - name: Run unit tests
+      - name: Run Unit Tests
         run: make test
 
-      # --------------------------
-      # Build Docker image
-      # --------------------------
-      - name: Build Docker image (dev overlay)
-        run: make docker-build OVERLAY=dev
+      - name: Build Docker Image
+        run: make docker-build
 
-      # --------------------------
-      # Docker Hub login (main branch only)
-      # --------------------------
-      - name: Log in to Docker Hub
-        if: ${{ github.ref == 'refs/heads/main' }}
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u your-dockerhub-username --password-stdin
+      - name: Build Docker Migration Image
+        run: make docker-build-migrate
 
-      # --------------------------
-      # Push Docker image (stg overlay)
-      # --------------------------
-      - name: Push Docker image
-        if: ${{ github.ref == 'refs/heads/main' }}
-        run: make docker-push OVERLAY=stg
+      # Push Docker images only for non-dev
+      - name: Push Docker Images
+        if: ${{ env.OVERLAY != 'dev' }}
+        run: make docker-push docker-push-migrate
 
+      # Run DB Migrations
+      - name: Run DB Migrations
+        run: make db-migrate
 
+      # Deploy to Kubernetes
+      - name: Deploy to Kubernetes
+        run: make deploy
