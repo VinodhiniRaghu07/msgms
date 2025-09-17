@@ -11,50 +11,54 @@ jobs:
     runs-on: self-hosted
 
     steps:
+      # --------------------------
+      # Checkout repository
+      # --------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
       # --------------------------
-      # Environment Validation
+      # Validate environment
       # --------------------------
       - name: Validate environment
-        run: make -C msgms validate-env
+        run: make validate-env
 
       # --------------------------
-      # Go Dependencies
+      # Install Go dependencies
       # --------------------------
       - name: Install Go dependencies
-        run: make -C msgms deps
+        run: make deps
 
       # --------------------------
-      # Build Go Binary
+      # Build Go binary
       # --------------------------
       - name: Build Go binary
-        run: make -C msgms build
+        run: make build
 
       # --------------------------
-      # Run Unit Tests
+      # Run unit tests
       # --------------------------
       - name: Run unit tests
-        run: make -C msgms test
+        run: make test
 
       # --------------------------
-      # Build Docker Image
+      # Build Docker image
       # --------------------------
       - name: Build Docker image (dev overlay)
-        run: make -C msgms docker-build OVERLAY=dev
+        run: make docker-build OVERLAY=dev
 
       # --------------------------
-      # Docker Hub Login (main branch only)
+      # Docker Hub login (main branch only)
       # --------------------------
       - name: Log in to Docker Hub
         if: ${{ github.ref == 'refs/heads/main' }}
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u your-dockerhub-username --password-stdin
 
       # --------------------------
-      # Push Docker Image (stg overlay)
+      # Push Docker image (stg overlay)
       # --------------------------
       - name: Push Docker image
         if: ${{ github.ref == 'refs/heads/main' }}
-        run: make -C msgms docker-push OVERLAY=stg
+        run: make docker-push OVERLAY=stg
+
 
