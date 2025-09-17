@@ -1,14 +1,14 @@
 name: Msgms CI/CD
 
 on:
-  workflow_dispatch:   # manual trigger
+  workflow_dispatch:  # manual trigger
   push:
     branches:
-      - main           # trigger on push to main
+      - main
 
 jobs:
   build:
-    runs-on: self-hosted   # use your self-hosted runner
+    runs-on: self-hosted
 
     steps:
       - name: Checkout repository
@@ -17,26 +17,25 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '24.4'   
 
-      - name: Install dependencies
-        working-directory: ./msgms   # 👈 Run inside msgms folder
-        run: go mod tidy
+      - name: Validate environment
+        run: make validate-env
 
       - name: Build Go binary
-        working-directory: ./msgms
-        run: go build -o bin/msgms ./...
+        run: make build
 
       - name: Run unit tests
-        working-directory: ./msgms
-        run: go test ./... -v
+        run: make test
 
-      - name: Build Docker image
-        run: docker build -t msgms:latest ./msgms   # 👈 Point Docker build to msgms
+      - name: Build Docker image (dev)
+        run: make docker-build OVERLAY=dev
 
-      # Push image only if main branch
-      - name: Push Docker image
-        if: github.ref == 'refs/heads/main'
-        run: |
-          docker tag msgms:latest your-dockerhub-username/msgms:latest
-          docker push your-dockerhub-username/msgms:latest
+      - name: Log in to Docker Hub (stg/prd only)
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u your-dockerhub-username --password-stdin
+
+      - name: Push Docker image (stg/prd only)
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: make docker-push OVERLAY=stg
+
