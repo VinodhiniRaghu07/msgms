@@ -1,0 +1,36 @@
+name: Msgms CI/CD
+
+on:
+  workflow_dispatch:  # Manual trigger from GitHub UI
+  push:               # Trigger when pushing code
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: self-hosted   # 👈 Use your self-hosted runner
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'   # match your project Go version
+
+      - name: Validate environment
+        run: make validate-env
+
+      - name: Build Go binary
+        run: make build
+
+      - name: Run unit tests
+        run: make test
+
+      - name: Build Docker image
+        run: make docker-build OVERLAY=dev
+
+      # Optional: Push image only if on main branch
+      - name: Push Docker image
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: make docker-push OVERLAY=stg
