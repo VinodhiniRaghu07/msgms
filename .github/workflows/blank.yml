@@ -20,16 +20,19 @@ jobs:
           go-version: '1.22'
 
       - name: Install dependencies
+        working-directory: ./msgms   # 👈 Run inside msgms folder
         run: go mod tidy
 
       - name: Build Go binary
+        working-directory: ./msgms
         run: go build -o bin/msgms ./...
 
       - name: Run unit tests
+        working-directory: ./msgms
         run: go test ./... -v
 
       - name: Build Docker image
-        run: docker build -t msgms:latest .
+        run: docker build -t msgms:latest ./msgms   # 👈 Point Docker build to msgms
 
       # Push image only if main branch
       - name: Push Docker image
